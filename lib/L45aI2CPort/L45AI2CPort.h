@@ -1,0 +1,480 @@
+/*
+ L45AI2CPort.h
+	als Include-Datei erstellt am 09.02.22
+
+In dieser Datei werden alle Definitionen und Funktionen abgelegt, die f�r die Verwendung
+des Horter I2C-Port �ber die I2C Schnittstelle erforderlich sind.
+Erste Test in Verbindung mit
+sketch_jan15b_controllinino_BasicShutters_Index
+
+erforderlich f�r die Funktion sind folgende Funktionen im Hauptprogramm
+#include <Wire.h>         			// f�r die Verwendung von I2C Funktionen zwingend
+
+setup()		initI2C();					unter Verwendung von wire.h und I2C_IN_ADDR
+loop()		void leseI2CPort();			E - Eingabe
+			auswertungI2CPort63();  	V - Verarbeitung
+			voids in <L45Shutters.h>	A - Ausgabbe
+
+interne Funktionen der Librarie
+			void bit2byte(byte eingaenge, byte eingaengealt)
+folgende interne Funktionen ben�tigen die Basics aus 	A - Ausgabbe
+			void rolladeOGStopGesamt ()
+			void rolladeOGdistanz(int nummer, int distanz)
+			void rolladeOGESoben(int nummer);
+			void rolladeOGESunten(int nummer);
+			void rolladeOGStop(int nummer);
+
+			void checkStartsperreOG()
+			void rolladeOGKommando(int nummerRolladeOG, int befehl, int modus, unsigned long startzeit)
+*/
+
+#define I2C_IN_ADDR 63    		// test o.k. , getestet mit Schraubklemmen Screw-Shield als aus Mege2560 Pin 20/21
+enum I2CPort63Flags { steigend, fallend, ein24V, aus0V };  // neu am 19.03.22
+
+byte I2CPortEingang[8];       	// das am I2C-Port gelesene Eingangssignal
+const int NUMINBITS = sizeof(I2CPortEingang);
+
+/* folgende Konstanten in <L45AAuswertungTasten.h> definiert
+const unsigned long zeitpunktDauerTaste1 = 550;	 // Taste < 550ms bet�tigt 	-->	Rollade f�hrt nur mit einer Differenz im Level
+const unsigned long zeitpunktDauerTaste2 = 1100; // 550 <= t < 1100			--> ...  in ENdstellung
+*/												 // 1100 <= t				--> Totmannsteuerung
+unsigned long startZeitPort63[NUMINBITS];
+unsigned long endeZeitPort63[NUMINBITS];		 // optional,
+
+/*
+Auskommentierung am 20.03.22
+Festlegung, ob diese Definition hier erfolgen mu�, oder in der <L45AAuswertungTasten.h>
+Texte werden nur f�r DEBUG_PRINT verwendet, Option f�r MQTT Erweiterung f�r Publish - Topic
+char *TasterPush = " -> Taster bet�tigt f�r Rollade:  ";
+*/
+const char *komandoStringI2C[]  =   { "Bad auf      ","Bad ab      ",
+						  		"Schlafen auf ","Schlafen ab ",
+						  		"Arb-Sued auf ","Arb-Sued ab " ,
+						  		"Arb-West auf ","Arb-West ab " };
+
+
+void resetFlagsFallend()  {
+  static boolean merker;
+  if ( merker == false && startsperre == false )   {
+    merker = true;
+    DEBUG_PRINTLN(" merker::  true  && startsperre::  false  --> BitClear");
+    for (int i = 0 ; i < NUMINBITS; i++)  {
+	    	//bitClear(I2CPortEingang[i], steigend);
+			//bitClear(I2CPortEingang[i], ein24V);
+			bitClear(I2CPortEingang[i], fallend);
+			//bitClear(I2CPortEingang[i], aus0V);
+  	}  //  Ende for int ...
+  }  // Ende if ( (merker == false) && ( startsperre == false ) )
+}  // Ende void resetFlags()
+
+
+
+
+
+
+//  09.02.2022, neu entsprechend sketch_sep27b
+void initI2C() {
+  Wire.begin();             // I2C-Pins definieren
+  // setzten aller Bits der Eingabekarte auf 1
+  // -----------------------------------------
+  Wire.beginTransmission(I2C_IN_ADDR);   // Start �bertragung zum PCF8574
+  Wire.write(0xFF);                      // Alle Bits sind Eing�nge
+  Wire.endTransmission();                // Ende
+  DEBUG_PRINTLN("void initI2C() o.k");
+  //resetFlagsFallend();
+}  // Ende void initI2C()
+
+
+// am 19.03.22 den 2ten Parameter erg�nzt. Intention ist die Anpassung an die Librarie Bounce2.h
+// am 15.04.22 statt der verwendeten &-Maskierung auf den bitRead( var, i ) ge�ndert
+// und Aufruf in loop() aus leseI2CPort Zeile 451
+void bit2byte(byte eingaenge, byte eingaengealt)  {
+  static boolean merker;
+  if ( merker == false && startsperre == false )   {
+       merker = true;
+       // erg�nzt am 17.04.22
+       eingaenge = eingaengealt;
+  }
+
+  for (int i = 0 ; i < NUMINBITS; i++)  {
+    if ( !bitRead(eingaengealt, i) && bitRead(eingaenge, i) ) {
+		DEBUG_PRINTLN_VALUE(" steigende Flanke erkannt f�r Pin           <--->  ", i);
+		Serial.print(" steigende Flanke erkannt f�r Pin :   <--->  : ");
+		Serial.println(i);
+		bitSet(I2CPortEingang[i], steigend);
+		bitSet(I2CPortEingang[i], ein24V);
+		bitClear(I2CPortEingang[i], fallend);
+		bitClear(I2CPortEingang[i], aus0V);
+		// Debug Ausgabe f�r I2CPortEingang[i]:  0101
+	}
+    if ( bitRead(eingaengealt, i) && bitRead(eingaenge, i) ) {
+		//DEBUG_PRINTLN_VALUE(" ein24V Signal erkannt f�r Pin :", i);
+		Serial.print(" ein24V Signal erkannt f�r Pin :");
+		Serial.println(i);
+		bitClear(I2CPortEingang[i], steigend);
+		bitSet(I2CPortEingang[i], ein24V);
+		bitClear(I2CPortEingang[i], fallend);
+		bitClear(I2CPortEingang[i], aus0V);
+	}
+    if ( bitRead(eingaengealt, i) &&  !bitRead(eingaenge, i) ) {
+		// DEBUG_PRINTLN_VALUE(" fallende Flanke erkannt f�r Pin :", i);
+		Serial.print(" fallende Flanke erkannt f�r Pin :   <--->  : ");
+		Serial.println(i);
+		bitClear(I2CPortEingang[i], steigend);
+		bitClear(I2CPortEingang[i], ein24V);
+		bitSet(I2CPortEingang[i], fallend);
+		bitSet(I2CPortEingang[i], aus0V);
+		// Debug Ausgabe f�r I2CPortEingang[i]:  1010
+	}
+    if ( !bitRead(eingaengealt, i)  &&  !bitRead(eingaenge, i)) {
+		// DEBUG_PRINTLN_VALUE(" aus0V Signal erkannt f�r Pin :", i);
+		//Serial.print(" aus0V Signal erkannt f�r Pin :");
+		//Serial.println(i);
+		bitClear(I2CPortEingang[i], steigend);
+		bitClear(I2CPortEingang[i], ein24V);
+		bitClear(I2CPortEingang[i], fallend);
+		bitSet(I2CPortEingang[i], aus0V);
+	}
+
+      //DEBUG_PRINT_VALUE("I2CPort Bit am Eingang :", i);
+      //Serial.print("I2CPort Bit am Eingang :  ");
+      //Serial.print(i);
+      //DEBUG_PRINTLN_VALUEBIN("  hat Wert :  ", I2CPortEingang[i]);
+      //Serial.print("  hat Wert :  ");
+      //Serial.println(I2CPortEingang[i]);
+
+    // I2Centprell(i);
+  }  //  Ende for (int i = 0 ; i < NUMINBITS; i++)
+}   //  Ende void bit2byte(byte eingaenge)
+
+
+void printI2CPort() {
+  for (int i = 0 ; i < NUMINBITS; i++) {
+    DEBUG_PRINTLN_VALUE("I2CPort Bit am Eingang :  ", i);
+    DEBUG_PRINTLN_VALUE("  hat Wert :  ", I2CPortEingang[i]);
+  }
+}  // Ende void printI2CPort()
+
+/*
+Erg�nzung 14.03.22
+folgend die Routinen in Verbindung mit der Rolladensteuerung Version 2
+Vorlagen entsprechend L45AAuswertungTasten.h f�r eine neue Librarie L45AAuswertungI2C.h
+
+void rolladeOGStopGesamt ()
+void rolladeOGdistanz(int nummer, int distanz)
+void rolladeOGESoben(int nummer);
+void rolladeOGESunten(int nummer);
+void rolladeOGStop(int nummer);
+
+*/
+void rolladeOGStopGesamt ()  {				// f�r einen Aufruf in Verbindung mit den Zentral-Kommandos
+	shuttersBadHalt();
+	Bad.setLevel(rolladeOGlevel[nameBad]);
+	shuttersSchlafHalt();
+	Schlaf.setLevel(rolladeOGlevel[nameSchlaf]);
+	shuttersArbSuedHalt();
+	ArbSued.setLevel(rolladeOGlevel[nameArbSued]);
+	shuttersArbWestHalt();
+	ArbWest.setLevel(rolladeOGlevel[nameArbWest]);
+}  //  Ende void rolladeOGStopGesamt ()
+
+//  in Abh�ngigkeit von nummerRolladeOG [0..3] wird die Rolladen auf das Level 60% gefahren
+//  das erfolgt, wenn die Rollade nicht auf 60% steht
+//  als Abw�rtsfahhrt virtuell entsprechend dem Aufruf    									---->   sp�ter �ndern
+//  Option ist hier ein 2ter Parameter (int level ), auf das die Rollade gefahren wird
+
+void rolladeOGdistanz(int nummer, int distanz)  {
+	switch (nummer)  {
+		case 0:
+		Bad.setLevel(distanz);
+		break;
+		case 1:
+		Schlaf.setLevel(distanz);
+		break;
+		case 2:
+		ArbSued.setLevel(distanz);
+		break;
+		case 3:
+		ArbWest.setLevel(distanz);
+		break;
+	}  // Ende switch (nummer)
+}  // Ende void rolladeOGdistanz(nummer)
+
+
+//  in Abh�ngigkeit von nummerRolladeOG [0..3] wird die Rolladen auf das Level 0% gefahren
+//  das erfolgt, wenn die Rollade auf nicht auf 30% steht
+//  als Aufw�rtsfahhrt virtuell entsprechend dem Aufruf   									---->   sp�ter �ndern
+//  Option ist hier ein 2ter Parameter (int level ), auf das die Rollade gefahren wird
+void rolladeOGESoben(int nummer)  {
+	switch (nummer)  {
+		case 0:
+		Bad.setLevel(0);
+		DEBUG_PRINTLN_VALUE("--Rollade Bad �ber Befehl nach Endschalter oben ",rolladeOGlevel[nummer]);
+		break;
+		case 1:
+		Schlaf.setLevel(0);
+		DEBUG_PRINTLN_VALUE("--Rollade Schalfzimmmer �ber Befehl nach Endschalter oben ",rolladeOGlevel[nummer]);
+		break;
+		case 2:
+		ArbSued.setLevel(0);
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeiten Sued �ber Befehl nach Endschalter oben ",rolladeOGlevel[nummer]);
+		break;
+		case 3:
+		ArbWest.setLevel(0);
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeiten West �ber Befehl nach Endschalter oben ",rolladeOGlevel[nummer]);
+		break;
+	}  // Ende switch (nummer)
+}  // Ende void rolladeOGESoben(nummer)
+
+
+void rolladeOGESunten(int nummer)  {
+	switch (nummer)  {
+		case 0:
+		Bad.setLevel(100);
+		DEBUG_PRINTLN_VALUE("--Rollade Bad �ber Befehl nach Endschalter unten ",rolladeOGlevel[nummer]);
+		break;
+		case 1:
+		Schlaf.setLevel(100);
+		DEBUG_PRINTLN_VALUE("--Rollade Schalfzimmmer �ber Befehl nach Endschalter unten ",rolladeOGlevel[nummer]);
+		break;
+		case 2:
+		ArbSued.setLevel(100);
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeiten Sued �ber Befehl nach Endschalter unten ",rolladeOGlevel[nummer]);
+		break;
+		case 3:
+		ArbWest.setLevel(100);
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeiten West�ber Befehl nach Endschalter unten ",rolladeOGlevel[nummer]);
+		break;
+	}  // Ende switch (nummer)
+}  // Ende void rolladeOGESunten(nummer)
+
+
+
+//  in Abh�ngigkeit von nummerRolladeOG [0..3] wird die Rolladenbewegung gestoppt
+void rolladeOGStop(int nummer)  {
+	switch (nummer)  {
+		case 0:
+		shuttersBadHalt();
+		DEBUG_PRINTLN_VALUE("--Rollade Bad �ber Befehl gestoppt bei Level ",rolladeOGlevel[nummer]);
+		Bad.setLevel(rolladeOGlevel[nummer]);
+		break;
+		case 1:
+		shuttersSchlafHalt();
+		DEBUG_PRINTLN_VALUE("--Rollade Schlafzimmer �ber Befehl gestoppt bei Level ",rolladeOGlevel[nummer]);
+		Schlaf.setLevel(rolladeOGlevel[nummer]);
+		break;
+		case 2:
+		shuttersArbSuedHalt();
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeit S�den �ber Befehl gestoppt bei Level ",rolladeOGlevel[nummer]);
+		ArbSued.setLevel(rolladeOGlevel[nummer]);
+		break;
+		case 3:
+		shuttersArbWestHalt();
+		DEBUG_PRINTLN_VALUE("--Rollade Arbeit Westen gestoppt bei Level ",rolladeOGlevel[nummer]);
+		ArbWest.setLevel(rolladeOGlevel[nummer]);
+		break;
+
+	}  // Ende switch (nummer)
+}  // Ende void rolladeOGStop(nummer)
+
+
+
+/*
+Definition in <L45aShutters.h> Zeile 39
+	enum OGRolladenNamen { nameBad, nameSchlaf, nameArbSued, nameArbWest };
+	byte rolladeOGaktiv;
+*/
+
+void rolladeOGKommando(int nummerRolladeOG, int befehl, int modus, unsigned long startzeit)  {
+	// static byte flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
+	static unsigned long dauerTastendruck[5];
+
+	switch (modus) {
+		case 1:				// steigende Flanke ergibt Rolladenkommando Level�nderung um 30%
+		//
+		DEBUG_PRINT_VALUE("--> Modus = 1 und befehl =  ", befehl);
+		DEBUG_PRINTLN_VALUE("  und  rolladeOGaktiv =  ", rolladeOGaktiv);
+		//
+		if (bitRead(rolladeOGaktiv,nummerRolladeOG))  {
+			//DEBUG_PRINTLN("   --->  Rollade Stop �ber Modus=1 und bitRead(rolladeOGaktiv,nummerRolladeOG) ");
+			Serial.println("   --->  Rollade Stop �ber Modus=1 und bitRead(rolladeOGaktiv,nummerRolladeOG) ");
+			rolladeOGStop(nummerRolladeOG);
+
+		}   else  {
+		if (befehl == 0)  {   // Befehl auf, die Schlie�fl�che wird um 30% verkelinert - > level 1 30%
+			// 11.03.22 nach Test hier eingef�gt. Die �bergabe der Zeiger geht nicht in Verbindung mit DEBUG_PRINTLN,
+			// ??? nicht mit F-Makro , hier noch Kompilerdirektive mit _smartdebug erg�nzen
+			Serial.print(TasterPush);
+			Serial.print(nummerRolladeOG);
+			Serial.print(" __ ");
+            Serial.println(komandoStringI2C[nummerRolladeOG*2+befehl]);
+            // rolladeOGdistanz(int nummer, int distanz)
+			rolladeOGdistanz(nummerRolladeOG, (rolladeOGlevel[nummerRolladeOG] - 30));
+	   		}
+	   	if (befehl == 1)  {      // Befehl auf, die Schlie�fl�che wird um 30% verg��ert - > level + 30%
+			Serial.print(TasterPush);
+			Serial.print(nummerRolladeOG);
+			Serial.print(" __ ");
+            Serial.println(komandoStringI2C[nummerRolladeOG*2+befehl]);
+			// rolladeOGdistanz(int nummer, int distanz)
+			rolladeOGdistanz(nummerRolladeOG, (rolladeOGlevel[nummerRolladeOG] + 30));
+	   		}
+		}  // else bitRead(
+		break;
+		case 2:       // Signal 24V kontant, Signaldauer wird ermittelt und abh�ngig Kommandos ausgel�st
+			dauerTastendruck[nummerRolladeOG] = millis() - startzeit;
+			if (dauerTastendruck[nummerRolladeOG] > zeitpunktDauerTaste1)  {
+				DEBUG_PRINTLN_VALUE("---> Modus 2 , Dauer Tastendruck gr��er 1sec mit Wer  ",dauerTastendruck[nummerRolladeOG]);
+				if (dauerTastendruck[nummerRolladeOG] > zeitpunktDauerTaste2)  {
+					DEBUG_PRINTLN_VALUE("Dauer Tastendruck am Eingang > 2000 ms mit :", dauerTastendruck[nummerRolladeOG]);
+				}  else  {		// ab hier ist 1000ms < dauerTastendruck[nummerRolladeOG] < 2000
+				   if (befehl == 0)  {   // Befehl auf, Schlie�fl�che 0% , Fahrt bis oberen Endschalter
+
+				   DEBUG_PRINTLN_VALUE("   ---> Modus 2 , Befehl fahre Rollade in Endschalter oben, Rolladennummer ", nummerRolladeOG);
+				   rolladeOGESoben(nummerRolladeOG);
+				   }  // Ende if (befehl == 0)
+				   if (befehl == 1)  {   // Befehl ab, Schlie�fl�che 100% , Fahrt bis unteren Endschalter
+				   DEBUG_PRINTLN_VALUE("   ---> Modus 2 , Befehl fahre Rollade in Endschalter unten, Rolladennummer ", nummerRolladeOG);
+				   rolladeOGESunten(nummerRolladeOG);
+				   }  // Ende if (befehl == 1)
+
+		        }  // if (dauerTastendruck[nummerRolladeOG] > zeitpunktDauerTaste1)
+			}  //  Ende if (dauerTastendruck[nummerRolladeOG] > zeitpunktDauerTaste1)
+		//
+		break;
+
+		case 3:     // fallende Flanke: Signaldauer = Ein wird ermittelt und abh�ngig Kommandos ausgel�st
+		    dauerTastendruck[nummerRolladeOG] = millis() - startzeit;
+			if (dauerTastendruck[nummerRolladeOG] > zeitpunktDauerTaste2)  {
+			   // ab hier wird eine Totmannsteuerung umgesetzt, Ende Eingang = Ein --> Ende Rolladenfahrt
+		        DEBUG_PRINTLN_VALUE("   ---> Modus 3 , Befehl Rollade Stop Totmann, Rolladennummer ", nummerRolladeOG);
+				rolladeOGStop(nummerRolladeOG);
+		    }
+		//
+		break;
+    }  // Ende switch (modus)
+
+}  //  Ende void rolladeOGKommando
+
+void checkStartsperreOG()  {
+   // if ((rolladenEGkalibriert (0, 0) == 254) && (rolladenOGkalibriert (0, 0) == 30)) {   // 30  = 16 + 8 + 4 + 2
+    // DEBUG_PRINTLN("Sperre aufgehoben");  getestet am 28.02.22 �
+    // globale Variable definieren und UP aufrufen oder als lokale Variable in einer Funktion optional
+    // if  (rolladenOGkalibriert (0, 0) == 30)  {
+/*
+    if ( flagsOGcalibrate == 30 ) {
+    startsperre = false;
+  }
+  */
+}  // Ende void checkStartsperre()
+
+/*
+  im Hauptprogramm werden Arrays f�r die Speicherung von Zeiten definiert
+  unsigned long startZeit[NUMBUTTONS];    Auswertung in <L45AAuswertungTasten.h>
+  unsigned long endeZeit[NUMBUTTONS];
+  zum Testen
+  f�r den I2C-Port an Adresse 63 sind folgende Arrays definiert
+  unsigned long startZeitPort63[NUMINBITS];
+  unsigned long endeZeitPort63[NUMINBITS];
+*/
+
+ void auswertungI2CPort63()  {
+   /*
+     im Hauptprogramm werden Arrays f�r die Speicherung von Zeiten definiert
+     unsigned long startZeit[NUMBUTTONS];    Auswertung in <L45AAuswertungTasten.h>
+     unsigned long endeZeit[NUMBUTTONS];
+     zum Testen
+   */
+   /*
+   static boolean merker;
+   
+   if (merker == false)  {
+     merker = true;
+     Serial.println(" startsperre = false und void auswertungI2CPort63Vers2() ");
+     //DEBUG_PRINTLN(" startsperre = false und void auswertungI2CPort63() ");
+   }
+   */
+   for (int i = 0; i < NUMINBITS; i++)   {
+     //DEBUG_PRINT_VALUE("for (int i = 0; i < NUMINBITS; i++) -- > i:", i);
+     // debouncer[i].update();   // hier ggf. die entsprechende void einsetzen
+     if bitRead(I2CPortEingang[i], fallend)  { // Wenn die Taste losgelassen wird, Logik High-Aktives Signal �bergang von Ub nach 0V
+       rolladeOGKommando(i / 2 , i % 2 , 3 , startZeitPort63[i]);      // Modus 3 mit fallende Flanke des Eingangssignals Rollade Stop
+
+
+       endeZeitPort63[i] = millis();             // Zeitstempel f�r weitere Berechnung sichern
+       // hier kann die Schaltzeit endeZeitPort63[i] - startZeitPort63[i] berechnet werden
+       startZeitPort63[i] = endeZeitPort63[i];         // Startbedingung der Schleife zur�cksetzen
+     }
+     /*
+       if bitRead(I2CPortEingang[i], aus0V) {
+       DEBUG_PRINTLN_VALUE("Taster Port63 nicht mehr gedr�ckt von index i =   ", i);
+       } */
+
+     /*
+        folgende Bedingung ist mit debouncer[].rose() gleichwertig und nur in einem loop() - Zyklus erf�llt,
+        danach wird nur noch  das statische Signalzustand bis zur fallenden Flanke debouncer[].fallend() �ber debouncer[i].update();  ausgegeben
+        hier erfolgt die Auswertung der Zustands�nderungen, die Auswertung der Zeitdauer siehe in  ............
+     */
+     if bitRead(I2CPortEingang[i], steigend)  { // Wenn die Taste gedr�ckt wird, Logik High-Aktives Signal �bergang von 0V nach Ub
+       startZeitPort63[i] = millis();
+       rolladeOGKommando(i / 2 , i % 2 , 1 , startZeitPort63[i]);      // Modus 1 mit steigender Flanke des Eingangssignals
+       Serial.print(" bitRead(I2CPortEingang[i],steigend) von index i =  ");
+       Serial.print(i);
+       Serial.print(" - > ");
+       Serial.println(bitRead(I2CPortEingang[i], steigend));
+       // 15.04.22, die G�ltigkeit der Flanke izs nur f�r einen loop() - Zyklus und mu� daher hier zur�ckgesetzt werden.
+     }
+
+
+     if bitRead(I2CPortEingang[i], ein24V)  {
+       DEBUG_PRINTLN_VALUE("Taster gedr�ckt von index i =   ", i);
+       rolladeOGKommando(i / 2 , i % 2 , 2 , startZeitPort63[i]);   // Modus 2 mit EIngang = Ein  des Eingangssignals
+
+       /*      if ( (millis() - startZeitPort63[i]) >= zeitpunktDauerTaste1 )  {
+               Serial.print("Taster gedr�ckt von index i =   ");
+               Serial.print(i);
+               Serial.print("  l�nger gedr�ckt als  ");
+               Serial.print( zeitpunktDauerTaste1 );
+             }  // Ende Zeitvergleich auf langen Tastendruck
+             if ( (millis() - startZeitPort63[i]) >= zeitpunktDauerTaste2 )  {
+               Serial.print("  und l�nger gedr�ckt als  ");
+               Serial.print( zeitpunktDauerTaste2 );
+             }  // Ende Zeitvergleich auf Dauer - Tastendruck
+       */
+
+     }  // Ende if bitRead(I2CPortEingang[i], ein24V)
+   }  //  Ende  for (int i = 0; i < NUMBUTTONS; i++)
+   // }  // Ende  if ( startsperre == false )
+}  //  Ende  void auswertungI2CPort63 ()
+
+
+/*
+ Hauptfunktion dieser Librarie
+*/
+
+void leseI2CPort()   {
+  // Einlesen der Bits aus der I2C-INPUT Karte
+  // ------------------------------------------
+  static byte wert;                    // am 09.02.22 auf lokale Variable ge�ndert
+  static byte altwert = 255;		// am 09.03.22 den Wert erg�nzt, ist in Verbindung mit der Auswertung der
+  // steigenden Flanke zu werten und verhindert Rolladenfahrt nach Programmstart, wenn fehlerhaft ein Eingangssignal anliegt
+
+  Wire.requestFrom(I2C_IN_ADDR, 1);    // Ein Byte (= 8 Bits) vom PCF8574 lesen
+  while (Wire.available() == 0)        // Warten, bis Daten verf�gbar
+    ;
+  wert = 255 - Wire.read();            // in invertierte Eingabe wandlen
+  // bit2byte(wert); verschoben in if (wert != altwert)
+
+  if (wert != altwert) {               // Wert nur ausgeben wenn er sich �ndert
+    // bit2byte(wert, altwert);       	// am 19.03.22 nach hier verschoben und den 2ten Parameter erg�nzt
+    DEBUG_PRINTLN_VALUE("Anzahl der NUMINBITS  :", NUMINBITS);
+    DEBUG_PRINTLN_VALUE("neuer Wert: ", wert);
+    // Wert auf "Seriel Monitor" ausgeben
+    DEBUG_PRINTLN_VALUEBIN("   dezimal und bin�r:  ", wert);
+  }  // Ende if (wert != altwert)
+  bit2byte(wert, altwert);
+  altwert = wert;
+
+  // auswertungI2CPort63();  in loop()
+}   // Ende void leseI2CPort()
+
