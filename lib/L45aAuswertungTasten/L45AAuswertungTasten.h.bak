@@ -2,15 +2,15 @@
  L45AAuswertungTasten.h
 	als Include-Datei erstellt am 03.03.22
 
-In dieser Datei werden alle Definitionen und Funktionen abgelegt, die für die Auswertung der
+In dieser Datei werden alle Definitionen und Funktionen abgelegt, die fï¿½r die Auswertung der
 Controllino_A0 - A15 , _I16 und _I17 erforderlich sind
-Die Auswertung erfolgt über die Entprellroutinen in <Bounce2.h>
+Die Auswertung erfolgt ï¿½ber die Entprellroutinen in <Bounce2.h>
 
 der Aufruf dieser Librarie kann erst nach
 - Indizierung Bounce debouncer[NUMBUTTONS];
 - Indizierung Shutters Zimmer(Parameter, ... );
 erfolgen. Im anderen Fall ergeben sich Compilerfehler und in void auswertungA0bisI17()
-dürfen keine Rolladenkommandos aus <L45AShutters.h> verwendet werden
+dï¿½rfen keine Rolladenkommandos aus <L45AShutters.h> verwendet werden
 
 Erste Test in Verbindung mit
 sketch_mar02a_controllinino_BasicShutters_Bounce2_Index
@@ -39,17 +39,17 @@ void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long
 
 */
 
-boolean startsperre = true;
+bool startsperre = true;
 
 // folgende Konstanten werden in void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long startzeit)
-// mit modus=2 verwendet, um von der Schaltdauer abhängige Aktionen durchzuführen
-const unsigned long zeitpunktDauerTaste1 = 550;	 // Taste < 550ms betätigt 	-->	Rollade fährt nur mit einer Differenz im Level
+// mit modus=2 verwendet, um von der Schaltdauer abhï¿½ngige Aktionen durchzufï¿½hren
+const unsigned long zeitpunktDauerTaste1 = 550;	 // Taste < 550ms betï¿½tigt 	-->	Rollade fï¿½hrt nur mit einer Differenz im Level
 const unsigned long zeitpunktDauerTaste2 = 1100; // 550 <= t < 1100			--> ...  in ENdstellung
 												 // 1100 <= t				--> Totmannsteuerung  ( Modus 3 nur in <L45AI2CPort.h> )
 
-char *TasterPush = " -> Taster betätigt für Rollade:  ";
+char *TasterPush = " -> Taster betï¿½tigt fï¿½r Rollade:  ";
 char *komandoStringA0ff[]  =  { "Zentral auf ","Zentral ab  ",
-						  		"GästeWC auf ","GästeWC ab  ",
+						  		"Gï¿½steWC auf ","Gï¿½steWC ab  ",
 						  		"Kueche auf  ","Kueche  ab  ",
 						  		"Essen auf   ","Essen ab    ",
 						  		"Terasse auf ","Terasse ab  ",
@@ -58,7 +58,7 @@ char *komandoStringA0ff[]  =  { "Zentral auf ","Zentral ab  ",
 						  		"Erker 3auf  ","Erker 3 ab  "   };
 /*
 Auskommentierung am 20.03.22
-Festlegung, ob diese Definition hier erfolgen muß, oder in der <L45AI2CPort.h
+Festlegung, ob diese Definition hier erfolgen muï¿½, oder in der <L45AI2CPort.h
 char *komandoStringI2C[]  =   { "Bad auf      ","Bad ab      ",
 						  		"Schlafen auf ","Schlafenab  ",
 						  		"Arb-Sued auf ","Arb-Sued ab " ,
@@ -66,7 +66,7 @@ char *komandoStringI2C[]  =   { "Bad auf      ","Bad ab      ",
 
 */
 void setupDebouncer()  {
-  // ergänzt am 02.03.22 für die Instanzen der Testerentprellroutinen
+  // ergï¿½nzt am 02.03.22 fï¿½r die Instanzen der Testerentprellroutinen
   for (int i = 0; i < NUMBUTTONS; i++) {
     // pinMode(buttonPins[i], INPUTMODE);  Definition erfolgt in L45AControllino.h
     debouncer[i].attach(buttonPins[i]);
@@ -78,7 +78,7 @@ void setupDebouncer()  {
         debouncer[i].interval(entprellZeitI17);
         break;
       default:
-        //  alle Eingänge mit Tastern Rolladenkomandos auf/ab
+        //  alle Eingï¿½nge mit Tastern Rolladenkomandos auf/ab
         debouncer[i].interval(entprellZeit);
         break;
     }  //  Ende switch (i)
@@ -89,7 +89,7 @@ void setupDebouncer()  {
 void checkStartsperre()  {
    if (startsperre == true)  {
    		if ((rolladenEGkalibriert (0, 0) == 254) && (rolladenOGkalibriert (0, 0) == 14)) {   // 30  = 16 + 8 + 4 + 2
-    	DEBUG_PRINTLN("Sperre aufgehoben");    // getestet am 28.02.22 Ä
+    	DEBUG_PRINTLN("Sperre aufgehoben");    // getestet am 28.02.22 ï¿½
     	// globale Variable definieren und UP aufrufen oder als lokale Variable in einer Funktion optional
     	startsperre = false;
   		}
@@ -106,21 +106,21 @@ void checkStartsperre()  {
 	int modus	Modus = 1 	bei (debouncer[i].rose() &&  (debouncer[i].read() == HIGH))
 							wenn Rollade aktiv, dann Kommando STOP
 
-							für Rollade aktiv wird in den Funktionen flagsrollade[nummerRolladeEG] auch das flagsrollade[nummerRolladeEG]
-							verändert, indem das Bit0 = Rollade aktiv gesetzt wird
-							in shutters...SetState(state) wird es geöscht
+							fï¿½r Rollade aktiv wird in den Funktionen flagsrollade[nummerRolladeEG] auch das flagsrollade[nummerRolladeEG]
+							verï¿½ndert, indem das Bit0 = Rollade aktiv gesetzt wird
+							in shutters...SetState(state) wird es geï¿½scht
 
 							wenn nicht aktiv, dann Rollade entsprechend Parameter befehl fahren, Zielposition level +/- 33%
 							Parameter dauer nach dauerTastendruck[nummerRolladeEG] sichern
 				Modus = 2	bei (debouncer[i].read() == HIGH)
 							Vergleich, ob Parameter dauer - dauerTastendruck[nummerRolladeEG] >= 1 sec, dann level auf 100%/0%
 				Modus = 3	bei (debouncer[i].fell() &&  (debouncer[i].read() == LOW))
-							Auswertung dauerTastendruck[nummerRolladeEG] für Sonderbefehle, z.B. EEPROM-Parameter verändern
+							Auswertung dauerTastendruck[nummerRolladeEG] fï¿½r Sonderbefehle, z.B. EEPROM-Parameter verï¿½ndern
 */
 
 void rolladeEGStopGesamt()  {
 	shuttersGWcHalt();
-	GWc.setLevel(rolladeEGlevel[nameGWC]);   // 13.03.22 prüfe. ob Verwendung aus der enum EGRolladenNamen nach Compileraufruf
+	GWc.setLevel(rolladeEGlevel[nameGWC]);   // 13.03.22 prï¿½fe. ob Verwendung aus der enum EGRolladenNamen nach Compileraufruf
 	shuttersKuecheHalt();
 	Kueche.setLevel(rolladeEGlevel[nameKueche]);
 	shuttersEssenHalt();
@@ -135,7 +135,7 @@ void rolladeEGStopGesamt()  {
 	Erker1.setLevel(rolladeEGlevel[nameErker3]);
 }  //  Ende void rolladeEGStopGesamt ()
 
-/* am 20.03.22 nach <L45AI2CPort.h> übertragen
+/* am 20.03.22 nach <L45AI2CPort.h> ï¿½bertragen
 void rolladeOGStopGesamt ()  {
 	shuttersBadHalt();
 	Bad.setLevel(rolladeOGlevel[nameBad]);
@@ -148,7 +148,7 @@ void rolladeOGStopGesamt ()  {
 }  //  Ende void rolladeOGStopGesamt ()
 */
 
-//  in Abhängigkeit von nummerRolladeEG [0] wird die Rollade über den Relaiseingang Zentral ....
+//  in Abhï¿½ngigkeit von nummerRolladeEG [0] wird die Rollade ï¿½ber den Relaiseingang Zentral ....
 //  .... Auf in die obere Endposition gefahren  ( ESOben = Endschalter oben )   13.03.22
 
 void rolladeEGESObenGesamt() {
@@ -189,27 +189,27 @@ void rolladeOGESUntenGesamt() {
 
 
 
-//  in Abhängigkeit von nummerRolladeEG [0..7] wird die Rolladenbewegung gestoppt
+//  in Abhï¿½ngigkeit von nummerRolladeEG [0..7] wird die Rolladenbewegung gestoppt
 void rolladeEGStop(int nummer)  {
 	switch (nummer)  {
 		case 0:
-		// shuttersZentralHalt();  zentrale Relais für Rolladen werden nicht mehr benötigt, per Software müssen alle Rolladen per leveländerung
+		// shuttersZentralHalt();  zentrale Relais fï¿½r Rolladen werden nicht mehr benï¿½tigt, per Software mï¿½ssen alle Rolladen per levelï¿½nderung
 		// verfahren werden
 		rolladeEGStopGesamt();
 		break;
 		case 1:
 		shuttersGWcHalt();
-		DEBUG_PRINTLN_VALUE("--Rollade GästeWC über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Gï¿½steWC ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		GWc.setLevel(rolladeEGlevel[nummer]);
 		break;
 		case 2:
 		shuttersKuecheHalt();
-		DEBUG_PRINTLN_VALUE("--Rollade Küche über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Kï¿½che ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		Kueche.setLevel(rolladeEGlevel[nummer]);
 		break;
 		case 3:
 		shuttersEssenHalt();
-		DEBUG_PRINTLN_VALUE("--Rollade Essen über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Essen ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		Essen.setLevel(rolladeEGlevel[nummer]);
 		break;
 		case 4:
@@ -219,26 +219,26 @@ void rolladeEGStop(int nummer)  {
 		break;
 		case 5:
 		shuttersErker1Halt();
-        DEBUG_PRINTLN_VALUE("--Rollade Erker 1 über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+        DEBUG_PRINTLN_VALUE("--Rollade Erker 1 ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		Erker1.setLevel(rolladeEGlevel[nummer]);
 		break;
 		case 6:
 		shuttersErker2Halt();
-		DEBUG_PRINTLN_VALUE("--Rollade Erker 2 über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Erker 2 ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		Erker2.setLevel(rolladeEGlevel[nummer]);
 		break;
 		case 7:
 		shuttersErker3Halt();
-		DEBUG_PRINTLN_VALUE("--Rollade Erker 3 über Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Erker 3 ï¿½ber Befehl gestoppt bei Level ",rolladeEGlevel[nummer]);
 		Erker3.setLevel(rolladeEGlevel[nummer]);
 		break;
 	}  // Ende switch (nummer)
 }  // Ende void rolladeEGStop(nummer)
 
 
-//  in Abhängigkeit von nummerRolladeEG [0..7] wird die Rolladen auf das Level 60% gefahren
+//  in Abhï¿½ngigkeit von nummerRolladeEG [0..7] wird die Rolladen auf das Level 60% gefahren
 //  das erfolgt, wenn die Rollade nicht auf 60% steht
-//  als Abwärtsfahhrt virtuell entsprechend dem Aufruf    									---->   später ändern
+//  als Abwï¿½rtsfahhrt virtuell entsprechend dem Aufruf    									---->   spï¿½ter ï¿½ndern
 //  Option ist hier ein 2ter Parameter (int level ), auf das die Rollade gefahren wird
 
 void rolladeEGdistanz(int nummer, int distanz)  {
@@ -271,9 +271,9 @@ void rolladeEGdistanz(int nummer, int distanz)  {
 }  // Ende void rolladeEGdistanz(nummer)
 
 
-//  in Abhängigkeit von nummerRolladeEG [0..7] wird die Rolladen auf das Level 0% gefahren
+//  in Abhï¿½ngigkeit von nummerRolladeEG [0..7] wird die Rolladen auf das Level 0% gefahren
 //  das erfolgt, wenn die Rollade auf nicht auf 30% steht
-//  als Aufwärtsfahhrt virtuell entsprechend dem Aufruf   									---->   später ändern
+//  als Aufwï¿½rtsfahhrt virtuell entsprechend dem Aufruf   									---->   spï¿½ter ï¿½ndern
 //  Option ist hier ein 2ter Parameter (int level ), auf das die Rollade gefahren wird
 void rolladeEGESoben(int nummer)  {
 	switch (nummer)  {
@@ -282,31 +282,31 @@ void rolladeEGESoben(int nummer)  {
 		break;
 		case 1:
 		GWc.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade GästeWC über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Gï¿½steWC ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 2:
 		Kueche.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Küche über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Kï¿½che ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 3:
 		Essen.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Essen über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Essen ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 4:
 		Terasse.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Terasse über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Terasse ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 5:
 		Erker1.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker1 über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Erker1 ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 6:
 		Erker2.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker2 über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Erker2 ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 		case 7:
 		Erker3.setLevel(0);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker1 über Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
+		DEBUG_PRINTLN_VALUE("--Rollade Erker1 ï¿½ber Befehl nach Endschalter oben ",rolladeEGlevel[nummer]);
 		break;
 	}  // Ende switch (nummer)
 }  // Ende void rolladeEGESoben(nummer)
@@ -319,30 +319,30 @@ void rolladeEGESunten(int nummer)  {
 		break;
 		case 1:
 		GWc.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Gäste-WC über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Gï¿½ste-WC ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 		case 2:
 		Kueche.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Küche über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Kï¿½che ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 		case 3:
 		Essen.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Essen über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Essen ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 		case 4:
 		Terasse.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Terasse über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Terasse ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 		case 5:
 		Erker1.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker1 über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Erker1 ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		case 6:
 		Erker2.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker2 über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Erker2 ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 		case 7:
 		Erker3.setLevel(100);
-		DEBUG_PRINTLN_VALUE("--Rollade Erker3 über Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
+		DEBUG_PRINTLN_VALUE("--Rollade Erker3 ï¿½ber Befehl nach Endschalter unten ",rolladeEGlevel[nummer]);break;
 		break;
 	}  // Ende switch (nummer)
 }  // Ende void rolladeEGESunten(nummer)
@@ -350,30 +350,30 @@ void rolladeEGESunten(int nummer)  {
 
 
 void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long startzeit)  {
-	// static byte flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
+	// static int flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
 	static unsigned long dauerTastendruck[8];
 
 
 	switch (modus) {
-		case 1:				// steigende Flanke ergibt Rolladenkommando Leveländerung um 30%
+		case 1:				// steigende Flanke ergibt Rolladenkommando Levelï¿½nderung um 30%
 		//
 		DEBUG_PRINT_VALUE("--> Modus = 1 und befehl =  ", befehl);
 		DEBUG_PRINTLN_VALUE("  und  rolladeEGaktiv =  ", rolladeEGaktiv);
 		//
 		if (bitRead(rolladeEGaktiv,nummerRolladeEG))  {
-			DEBUG_PRINTLN("   --->  Rollade Stop über Modus=1 und bitRead(rolladeEGaktiv,nummerRolladeEG) ");
+			DEBUG_PRINTLN("   --->  Rollade Stop ï¿½ber Modus=1 und bitRead(rolladeEGaktiv,nummerRolladeEG) ");
 			rolladeEGStop(nummerRolladeEG);
 
 		}   else  {
-		if (befehl == 0)  {   // Befehl auf, die Schließfläche wird um 30% verkelinert - > level 1 30%
-			// 11.03.22 nach Test hier eingefügt. Die Übergabe der Zeiger geht nicht in Verbindung mit DEBUG_PRINTLN,
-			// ??? nicht mit F-Makro , hier noch Kompilerdirektive mit _smartdebug ergänzen
+		if (befehl == 0)  {   // Befehl auf, die Schlieï¿½flï¿½che wird um 30% verkelinert - > level 1 30%
+			// 11.03.22 nach Test hier eingefï¿½gt. Die ï¿½bergabe der Zeiger geht nicht in Verbindung mit DEBUG_PRINTLN,
+			// ??? nicht mit F-Makro , hier noch Kompilerdirektive mit _smartdebug ergï¿½nzen
 			Serial.print(TasterPush);
             Serial.println(komandoStringA0ff[nummerRolladeEG]);
             // rolladeEGdistanz(int nummer, int distanz)
 			rolladeEGdistanz(nummerRolladeEG, (rolladeEGlevel[nummerRolladeEG] - 30));
 	   		}
-	   	if (befehl == 1)  {      // Befehl auf, die Schließfläche wird um 30% vergößert - > level + 30%
+	   	if (befehl == 1)  {      // Befehl auf, die Schlieï¿½flï¿½che wird um 30% vergï¿½ï¿½ert - > level + 30%
 			Serial.print(TasterPush);
             Serial.println(komandoStringA0ff[nummerRolladeEG]);
 			// rolladeEGdistanz(int nummer, int distanz)
@@ -381,18 +381,18 @@ void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long
 	   		}
 		}  // else bitRead(
 		break;
-		case 2:       // Signal 24V kontant, SIgnaldauer wird ermittelt und abhängig Kommandos ausgelöst
+		case 2:       // Signal 24V kontant, SIgnaldauer wird ermittelt und abhï¿½ngig Kommandos ausgelï¿½st
 			dauerTastendruck[nummerRolladeEG] = millis() - startzeit;
 			if (dauerTastendruck[nummerRolladeEG] > zeitpunktDauerTaste1)  {
-				DEBUG_PRINTLN_VALUE("---> Modus 2 , Dauer Tastendruck größer 1sec mit Wer  ",dauerTastendruck[nummerRolladeEG]);
+				DEBUG_PRINTLN_VALUE("---> Modus 2 , Dauer Tastendruck grï¿½ï¿½er 1sec mit Wer  ",dauerTastendruck[nummerRolladeEG]);
 				if (dauerTastendruck[nummerRolladeEG] > zeitpunktDauerTaste2)  {
 					DEBUG_PRINTLN_VALUE("Dauer Tastendruck am Eingang > 2000 ms mit :", dauerTastendruck[nummerRolladeEG]);
 				}  else  {		// ab hier ist 1000ms < dauerTastendruck[nummerRolladeEG] < 2000
-				   if (befehl == 0)  {   // Befehl auf, Schließfläche 0% , Fahrt bis oberen Endschalter
+				   if (befehl == 0)  {   // Befehl auf, Schlieï¿½flï¿½che 0% , Fahrt bis oberen Endschalter
 				   DEBUG_PRINTLN_VALUE("   ---> Modus 2 , Befehl fahre Rollade in Endschalter oben, Rolladennummer ", nummerRolladeEG);
 				   rolladeEGESoben(nummerRolladeEG);
 				   }  // Ende if (befehl == 0)
-				   if (befehl == 1)  {   // Befehl ab, Schließfläche 100% , Fahrt bis unteren Endschalter
+				   if (befehl == 1)  {   // Befehl ab, Schlieï¿½flï¿½che 100% , Fahrt bis unteren Endschalter
 				   DEBUG_PRINTLN_VALUE("   ---> Modus 2 , Befehl fahre Rollade in Endschalter unten, Rolladennummer ", nummerRolladeEG);
 				   rolladeEGESunten(nummerRolladeEG);
 				   }  // Ende if (befehl == 1)
@@ -409,7 +409,7 @@ void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long
 }  //  Ende void rolladeEGKommando
 
 /*
-    ergänzt am 02.03.22 für die Auswertung der Testerentprellroutinen  -   Anfang
+    ergï¿½nzt am 02.03.22 fï¿½r die Auswertung der Testerentprellroutinen  -   Anfang
 */
 
 void auswertungA0bisI17()  {
@@ -418,8 +418,8 @@ void auswertungA0bisI17()  {
   if ( startsperre == false )  {
     for (int i = 0; i < NUMBUTTONS; i++)
     {
-      debouncer[i].update();   // Status prüfen
-      if (debouncer[i].fell()) // Wenn die Taste losgelassen wird, Logik High-Aktives Signal Übergang von Ub nach 0V
+      debouncer[i].update();   // Status prï¿½fen
+      if (debouncer[i].fell()) // Wenn die Taste losgelassen wird, Logik High-Aktives Signal ï¿½bergang von Ub nach 0V
       {
         endeZeit[i] = millis();
 
@@ -437,15 +437,15 @@ void auswertungA0bisI17()  {
           DEBUG_PRINT_VALUE(" i DIV 2    = ", vorkomma);
           DEBUG_PRINTLN_VALUE(" - i Modulo 2 = ", nachkomma);
           */
-          startZeit[i] = endeZeit[i];         // Startbedingung der Schleife zurücksetzen
+          startZeit[i] = endeZeit[i];         // Startbedingung der Schleife zurï¿½cksetzen
         }
 
         if (debouncer[i].fell() &&  (debouncer[i].read() == LOW)) {
-          DEBUG_PRINTLN_VALUE("Taster nicht mehr gedrückt von index i =   ", i);
+          DEBUG_PRINTLN_VALUE("Taster nicht mehr gedrï¿½ckt von index i =   ", i);
 
           switch (i)  {
             case 17:
-              DEBUG_PRINTLN("Lichtsensor Garage ist jetzt Aus = Dämmerung Morgens ");
+              DEBUG_PRINTLN("Lichtsensor Garage ist jetzt Aus = Dï¿½mmerung Morgens ");
               // Einschaltung am 02.03.22 getestet, hier Befehl oder Funktionsaufruf
               break;
           }  // Ende switch (i)
@@ -453,7 +453,7 @@ void auswertungA0bisI17()  {
         }  //  Ende if (debouncer[i].fell() &&  (debouncer[i].read() == LOW))
       }  // Ende if (debouncer[i].fell())
 
-      if (debouncer[i].rose()) // Wenn die Taste gedrückt wird, Logik High-Aktives Signal Übergang von 0V nach Ub
+      if (debouncer[i].rose()) // Wenn die Taste gedrï¿½ckt wird, Logik High-Aktives Signal ï¿½bergang von 0V nach Ub
       {
         startZeit[i] = millis();
         Serial.print(" debouncer[i].rose() von index i =  ");
@@ -463,13 +463,13 @@ void auswertungA0bisI17()  {
       }
 
       /*
-      * folgende Bedingung ist mit debouncer[].rose() nur in einem loop() - Zyklus erfüllt, danach wird nur noch  das statische Signalzustand
-      * bis zur fallenden Flanke debouncer[].fell() über debouncer[i].update();  ausgegeben
-      * hier erfolgt die Auswertung der Zustandsänderungen, die Auswertung der Zeitdauer siehe in  ............
+      * folgende Bedingung ist mit debouncer[].rose() nur in einem loop() - Zyklus erfï¿½llt, danach wird nur noch  das statische Signalzustand
+      * bis zur fallenden Flanke debouncer[].fell() ï¿½ber debouncer[i].update();  ausgegeben
+      * hier erfolgt die Auswertung der Zustandsï¿½nderungen, die Auswertung der Zeitdauer siehe in  ............
       */
 
       if (debouncer[i].rose() &&  (debouncer[i].read() == HIGH)) {
-        DEBUG_PRINTLN_VALUE("Taster gedrückt von index i =   ", i);
+        DEBUG_PRINTLN_VALUE("Taster gedrï¿½ckt von index i =   ", i);
 
         switch (i)  {
           case 0:
@@ -488,7 +488,7 @@ void auswertungA0bisI17()  {
 		     // Toggeln am 02.03.22 getestet, hier Befehl oder Funktionsaufruf
 		     break;
 		  case 17:
-		      DEBUG_PRINTLN("Lichtsensor Garage ist jetzt Ein = Dämmerung Abends ");
+		      DEBUG_PRINTLN("Lichtsensor Garage ist jetzt Ein = Dï¿½mmerung Abends ");
 		      // Einschaltung am 02.03.22 getestet, hier Befehl oder Funktionsaufruf
               break;
 
@@ -500,14 +500,14 @@ void auswertungA0bisI17()  {
             break;
 
 /*
-nach Auslagern der Statusmeldungen in ein char *komandoStringA0ff[]  erfolgt der Test mit Default für alle gleichartigen Komandos
+nach Auslagern der Statusmeldungen in ein char *komandoStringA0ff[]  erfolgt der Test mit Default fï¿½r alle gleichartigen Komandos
 */
 		 }  //  Ende switch
       }  //  if (debouncer[i].rose() &&  (debouncer[i].read() == HIGH))
 
       if (!debouncer[i].rose() &&  (debouncer[i].read() == HIGH))   {
 		//  hier Aufruf mit modus = 2  ,  Signal liegt an, Zeitdauer Signal ermitteln
-		DEBUG_PRINTLN_VALUE(" Signaldauer messen von Taster gedrückt mit index i =   ", i);
+		DEBUG_PRINTLN_VALUE(" Signaldauer messen von Taster gedrï¿½ckt mit index i =   ", i);
 		switch (i)  {
           case 0:
           //

@@ -6,21 +6,23 @@ Bounce2.h    und CONTROLLINO.h
 #define INPUTMODE INPUT     //
 // #define INPUTMODE INPUT_PULLLUP
 
-boolean startsperre = true;
+bool startsperre = true;
 #ifdef CONTROLLINO_MAXI
-   byte EGkallibriert = 30;
+   int EGkallibriert = 30;
 #endif
 
 #ifdef CONTROLLINO_MEGA
-   byte EGkallibriert = 254;
+   int EGkallibriert = 254;
 #endif
 
+// 09.07.23 Flag ergänzt
+bool i2cError = false;
 
 // Test des Array buttonPin[] nach Fehlermeldungen in L45AAuswerten.h
 // ggf. später in L45Controllino.h aufnehmen, da dort alle spezifischen IO-Definitionen abgelegt sind
 
 #ifdef CONTROLLINO_MAXI
-byte  buttonPins[] = { CONTROLLINO_A0, CONTROLLINO_A1, CONTROLLINO_A2, CONTROLLINO_A3, CONTROLLINO_A4,
+int  buttonPins[] = { CONTROLLINO_A0, CONTROLLINO_A1, CONTROLLINO_A2, CONTROLLINO_A3, CONTROLLINO_A4,
                         CONTROLLINO_A5, CONTROLLINO_A6, CONTROLLINO_A7, CONTROLLINO_A8, CONTROLLINO_A9,
                         CONTROLLINO_IN0, CONTROLLINO_IN1  };
 #endif

@@ -77,7 +77,7 @@ void setup()
   }
 
   defineControllinoRelais(); // in L45AControllino.h
-  initI2C();
+  initI2C(i2cError);
 
   /*
       in sketch_mar02a_controllinino_BasicShutters_Bounce2_Index Kommentar gefunden:

@@ -2,27 +2,27 @@
  L45AShutters.h
 	als Include-Datei erstellt am 15.01.21
 
-Release 25.02.22, Laufzeiten Aufwärts gemessen und mit Konstentendefinition course...Time übernommen
+Release 25.02.22, Laufzeiten Aufwï¿½rts gemessen und mit Konstentendefinition course...Time ï¿½bernommen
 
-In dieser Datei werden alle Definitionen/Funktionen abgelegt, die für die Funktion der
+In dieser Datei werden alle Definitionen/Funktionen abgelegt, die fï¿½r die Funktion der
 Rolladensteuerung Version 2 unter Verwendung der LIB Shutters V2.1.1. erforderlich sind.
 Erste Test in Verbindung mit sketch_jan15b_controllinino_BasicShutters_Index
 
-unten sind die Shutters Definitionen als Kommentar eingefügt, diese müssen im Hauptprogramm stehem
+unten sind die Shutters Definitionen als Kommentar eingefï¿½gt, diese mï¿½ssen im Hauptprogramm stehem
 */
 
 // test automatisches backup
 // The calibration ratio. If the full course is 30 sec. and the ratio is 0.1, the calibration time will be 30 * 0.1 = 3 sec. Defaults to 0.1
 const float calibrationRatio = 0.1;
 
-// byte flagsEGcalibrate = 0;
-byte flagsOGcalibrate = 0;
+// int flagsEGcalibrate = 0;
+int flagsOGcalibrate = 0;
 
 // mit Ratio 0.2 kann folgender Wert max. auf 32 eigestellt werden, mit 33 bleibt der Ausgang aud der void Zentral.begin()
 // dauerhaft gesetzt
 const unsigned long courseZentralTime = 32 * 1000;
 
-// hier kann die Hardwarezuordnung der Ausgänge / Relais umdefiniert werden
+// hier kann die Hardwarezuordnung der Ausgï¿½nge / Relais umdefiniert werden
 enum ZentralRelaisExtern {  ZentralAuf = CONTROLLINO_D0 , ZentralAb  = CONTROLLINO_D1 };
 // enum ZentralRelaisIntern {  ZentralAufIntern = CONTROLLINO_R0 , ZentralAbIntern  = CONTROLLINO_R1 };
 
@@ -39,7 +39,7 @@ enum EGRolladenNamen { dummiEG, nameGWC, nameKueche, nameEssen, nameTerasse , na
 enum OGRolladenNamen { nameBad, nameSchlaf, nameArbSued, nameArbWest };    // 15.04.21 dummiOG entfernt
 
 
-// hier kann die Hardwarezuordnung der Ausgänge / Relais umdefiniert werden
+// hier kann die Hardwarezuordnung der Ausgï¿½nge / Relais umdefiniert werden
 enum EGRolladen {  GWcAuf = CONTROLLINO_D2 , GWcAb = CONTROLLINO_D3,
                KuecheAuf  = CONTROLLINO_D4 , KuecheAb  = CONTROLLINO_D5,
 			   	EssenAuf  = CONTROLLINO_D6 , EssenAb   = CONTROLLINO_D7,
@@ -55,28 +55,28 @@ const unsigned long courseSchlafTime = 30 * 1000;
 const unsigned long courseArbSuedTime = 30 * 1000;
 const unsigned long courseArbWestTime = 18 * 1000;
 
-// hier kann die Hardwarezuordnung der Ausgänge / Relais umdefiniert werden
+// hier kann die Hardwarezuordnung der Ausgï¿½nge / Relais umdefiniert werden
 enum OGRolladen {  BadAuf = CONTROLLINO_R6 , BadAb = CONTROLLINO_R7,
 				SchlafAuf = CONTROLLINO_R8 , SchlafAb = CONTROLLINO_R9 ,
 			 ArbSuedAuf = CONTROLLINO_R10 , ArbSuedAb = CONTROLLINO_R11 ,
 			 ArbWestAuf = CONTROLLINO_R12 , ArbWestAb = CONTROLLINO_R13 };
 
-// in den Bits [0..7] wird für die Rollade mit der Nummer [0..7] der Wert 1 gespeichert, wenn die Rollade aktiv ist
+// in den Bits [0..7] wird fï¿½r die Rollade mit der Nummer [0..7] der Wert 1 gespeichert, wenn die Rollade aktiv ist
 // bitSet(rolladeEGantiv, rolladenNummer) in flagsrollade[nummerRolladeEG]
 // bitClear(rolladeEGantiv, rolladenNummer) in shutters...SetState(state)
-byte rolladeEGaktiv;
-byte rolladeOGaktiv;
+int rolladeEGaktiv;
+int rolladeOGaktiv;
 
 uint8_t rolladeEGlevel[8];    // Level der Rollade mit der Nummer [0..7] wird kontinuierlich gespeichert, Nummer 8 zbV
-uint8_t rolladeOGlevel[8];    // und steht für Funktionen gemäß Verifizierung vom 05/06.03.22 bereit
+uint8_t rolladeOGlevel[8];    // und steht fï¿½r Funktionen gemï¿½ï¿½ Verifizierung vom 05/06.03.22 bereit
 
 /*
 // void setupRolladen();    in L45AShutters.h mit den folgenden *.beginn() ergibt Kompilerfehler
 */
-byte rolladenEGkalibriert (byte bitnummer, uint8_t level)  {
-  static byte flagsEGcalibrate = 0;
+int rolladenEGkalibriert (int bitnummer, uint8_t level)  {
+  static int flagsEGcalibrate = 0;
   //  im EG gibt es nur 7 Rolladen, entsprechend binummer = [ 1 .. 7 ]
-  //  bitnummer = 0 wird verwendet, um nur den Wert von flagsEGcalibrate zurück zu geben
+  //  bitnummer = 0 wird verwendet, um nur den Wert von flagsEGcalibrate zurï¿½ck zu geben
   if (bitnummer != 0 ) {
     if (bitRead(flagsEGcalibrate, bitnummer) == false) {
       if (level == 0) {
@@ -85,13 +85,13 @@ byte rolladenEGkalibriert (byte bitnummer, uint8_t level)  {
     }  // Ende if (bitRead(flags ...
   }  //  Ende if (bitnummer != 0 )
   return flagsEGcalibrate;
-}  // Ende byte rolladenEGkalibriert
+}  // Ende int rolladenEGkalibriert
 
 
-byte rolladenOGkalibriert(byte bitnummer, uint8_t level)  {
-  static byte flagsOGcalibrate = 0;
+int rolladenOGkalibriert(int bitnummer, uint8_t level)  {
+  static int flagsOGcalibrate = 0;
   //  im EG gibt es nur 4 Rolladen, entsprechend binummer = [ 1 .. 4 ]
-  //  bitnummer = 0 wird verwendet, um nur den Wert von flagsOGcalibrate zurück zu geben
+  //  bitnummer = 0 wird verwendet, um nur den Wert von flagsOGcalibrate zurï¿½ck zu geben
   if (bitnummer != 0 ) {
   	if (bitRead(flagsOGcalibrate, bitnummer) == false) {
       if (level == 0) {
@@ -100,21 +100,21 @@ byte rolladenOGkalibriert(byte bitnummer, uint8_t level)  {
     }  // Ende if (bitRead(flags ...
   }  //  Ende if (bitnummer != 0 )
   return flagsOGcalibrate;
-}  // Ende byte rolladenOGkalibriert
+}  // Ende int rolladenOGkalibriert
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Zentral
-// Funktionsaufrufe für die zentralen Relais für alle Rolladen über die Ausgänge A0-A1
+// Funktionsaufrufe fï¿½r die zentralen Relais fï¿½r alle Rolladen ï¿½ber die Ausgï¿½nge A0-A1
 
-// Funktionsaufrufe für die Rolladenkommandos über Relais Zentral Auf/Ab
+// Funktionsaufrufe fï¿½r die Rolladenkommandos ï¿½ber Relais Zentral Auf/Ab
 void shuttersZentralUp() {
-  DEBUG_PRINTLN("Shutters Zentral aufwärts.");
+  DEBUG_PRINTLN("Shutters Zentral aufwï¿½rts.");
   // TODO: Implement the code for the shutters to go up
   digitalWrite(ZentralAuf, HIGH );
 }
 
 void shuttersZentralDown() {
-  DEBUG_PRINTLN("Shutters Zentral abwärts.");
+  DEBUG_PRINTLN("Shutters Zentral abwï¿½rts.");
   // TODO: Implement the code for the shutters to go down
   digitalWrite( ZentralAb, HIGH );
 }
@@ -137,7 +137,7 @@ void shuttersZentralSetState(uint8_t state) {
 }
 
 void onShuttersZentralLevelReached(uint8_t level) {
-  // stateZentral = level;			// Zustand sichern für kurze Rolladenlaufzeit
+  // stateZentral = level;			// Zustand sichern fï¿½r kurze Rolladenlaufzeit
   Serial.print("Shutters Zentral at ");
   Serial.print(level);
   Serial.println("%");
@@ -145,7 +145,7 @@ void onShuttersZentralLevelReached(uint8_t level) {
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  EG  +++++++  Erdgeschoss
-// Funktionsaufrufe für die Rollade im GästeWC
+// Funktionsaufrufe fï¿½r die Rollade im Gï¿½steWC
 void shuttersGWcUp() {
   DEBUG_PRINTLN("Shutters GWc going up.");
   // TODO: Implement the code for the shutters to go up
@@ -185,16 +185,16 @@ void onShuttersGWcLevelReached(uint8_t level) {
  DEBUG_PRINTLN_VALUE(" % und rolladeEGaktiv =  ", rolladeEGaktiv);
 
 // Funktion getestet am 26.02.22
-// am 05.03.22 Abhängigkeit als Fehler gesucht,
-// die Zuweisung muß immer erfolgen, das sonst sperre nie zurückgesetzt wird
+// am 05.03.22 Abhï¿½ngigkeit als Fehler gesucht,
+// die Zuweisung muï¿½ immer erfolgen, das sonst sperre nie zurï¿½ckgesetzt wird
 //  im EG gibt es nur 7 Rolladen, entsprechend binummer = [ 0 .. 6 ], somit GWc mit 0
-byte temp = rolladenEGkalibriert(nameGWC, level);
+int temp = rolladenEGkalibriert(nameGWC, level);
 DEBUG_PRINTLN_VALUE("> Rollade GWc kalibriert nach Start  ", temp);
 // Level der Rollade mit der Nummer [0..7] wird kontinuierlich gespeichert,
-rolladeEGlevel[nameGWC] = level;				// ergänzt am 06.03.22
+rolladeEGlevel[nameGWC] = level;				// ergï¿½nzt am 06.03.22
 }
 
-// Funktionsaufrufe für die Rollade in der Küche
+// Funktionsaufrufe fï¿½r die Rollade in der Kï¿½che
 void shuttersKuecheUp() {
   DEBUG_PRINTLN("Shutters Kueche going up.");
   // TODO: Implement the code for the shutters to go up
@@ -233,15 +233,15 @@ void onShuttersKuecheLevelReached(uint8_t level) {
  DEBUG_PRINTLN(" %");
 
 // Funktion getestet am 26.02.22
-byte temp = rolladenEGkalibriert(nameKueche, level);
+int temp = rolladenEGkalibriert(nameKueche, level);
 DEBUG_PRINTLN_VALUE("> Rollade Kueche kalibriert nach Start  ", temp);
 // Level der Rollade mit der Nummer [0..7] wird kontinuierlich gespeichert,
-rolladeEGlevel[nameKueche] = level;				// ergänzt am 06.03.22
+rolladeEGlevel[nameKueche] = level;				// ergï¿½nzt am 06.03.22
 }
 
 
 
-// Funktionsaufrufe für die Rollade im Esszimmer
+// Funktionsaufrufe fï¿½r die Rollade im Esszimmer
 void shuttersEssenUp() {
   DEBUG_PRINTLN("Shutters Essen going up.");
   // TODO: Implement the code for the shutters to go up
@@ -279,13 +279,13 @@ void onShuttersEssenLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Essen at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenEGkalibriert(nameEssen, level);
+ int temp = rolladenEGkalibriert(nameEssen, level);
  DEBUG_PRINTLN_VALUE("> Rollade Essen kalibriert nach Start  ", temp);
  // Level der Rollade mit der Nummer [0..7] wird kontinuierlich gespeichert,
- rolladeEGlevel[nameEssen] = level;				// ergänzt am 06.03.22
+ rolladeEGlevel[nameEssen] = level;				// ergï¿½nzt am 06.03.22
 }
 
-// Funktionsaufrufe für die Rollade Terasse
+// Funktionsaufrufe fï¿½r die Rollade Terasse
 void shuttersTerasseUp() {
   DEBUG_PRINTLN("Shutters Terasse going up.");
   // TODO: Implement the code for the shutters to go up
@@ -323,12 +323,12 @@ void onShuttersTerasseLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Terasse at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenEGkalibriert(nameTerasse, level);
+ int temp = rolladenEGkalibriert(nameTerasse, level);
  DEBUG_PRINTLN_VALUE("> Rollade Terasse kalibriert nach Start  ", temp);
- rolladeEGlevel[nameTerasse] = level;				// ergänzt am 06.03.22
+ rolladeEGlevel[nameTerasse] = level;				// ergï¿½nzt am 06.03.22
 }
 
-// Funktionsaufrufe für die Rollade Erker 1
+// Funktionsaufrufe fï¿½r die Rollade Erker 1
 void shuttersErker1Up() {
   DEBUG_PRINTLN("Shutters Erker1 going up.");
   // TODO: Implement the code for the shutters to go up
@@ -366,12 +366,12 @@ void onShuttersErker1LevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Erker1 at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenEGkalibriert(nameErker1, level);
+ int temp = rolladenEGkalibriert(nameErker1, level);
  DEBUG_PRINTLN_VALUE("> Rollade Erker 1 kalibriert nach Start  ", temp);
- rolladeEGlevel[nameErker1] = level;				// ergänzt am 06.03.22
+ rolladeEGlevel[nameErker1] = level;				// ergï¿½nzt am 06.03.22
 }
 
-// Funktionsaufrufe für die Rollade Erker 2
+// Funktionsaufrufe fï¿½r die Rollade Erker 2
 void shuttersErker2Up() {
   DEBUG_PRINTLN("Shutters Erker2 going up.");
   // TODO: Implement the code for the shutters to go up
@@ -409,12 +409,12 @@ void onShuttersErker2LevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Erker2 at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenEGkalibriert(nameErker2, level);
+ int temp = rolladenEGkalibriert(nameErker2, level);
  DEBUG_PRINTLN_VALUE("> Rollade Erker 2 kalibriert nach Start  ", temp);
- rolladeEGlevel[nameErker2] = level;				// ergänzt am 06.03.22
+ rolladeEGlevel[nameErker2] = level;				// ergï¿½nzt am 06.03.22
 }
 
-// Funktionsaufrufe für die Rollade Erker 3
+// Funktionsaufrufe fï¿½r die Rollade Erker 3
 
 void shuttersErker3Up() {
   DEBUG_PRINTLN("Shutters Erker3 going up.");
@@ -453,13 +453,13 @@ void onShuttersErker3LevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Erker3 at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenEGkalibriert(nameErker3, level);
+ int temp = rolladenEGkalibriert(nameErker3, level);
  DEBUG_PRINTLN_VALUE("> Rollade Erker 3 kalibriert nach Start  ", temp);
- rolladeEGlevel[nameErker3] = level;				// ergänzt am 06.03.22
+ rolladeEGlevel[nameErker3] = level;				// ergï¿½nzt am 06.03.22
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  OG  +++++++  Obergeschoss
-// Funktionsaufrufe für die Rollade im Bad
+// Funktionsaufrufe fï¿½r die Rollade im Bad
 
 void shuttersBadUp() {
   DEBUG_PRINTLN("Shutters Bad going up.");
@@ -498,12 +498,12 @@ void onShuttersBadLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Bad at ", level);
  DEBUG_PRINTLN(" %");
  // Funktion getestet am 26.02.22
- byte temp = rolladenOGkalibriert(nameBad, level);
+ int temp = rolladenOGkalibriert(nameBad, level);
  DEBUG_PRINTLN_VALUE("> Rollade Bad kalibriert nach Start  ", temp);
- rolladeOGlevel[nameBad] = level;				// ergänzt am 13.03.22 Fehlerkorrektur
+ rolladeOGlevel[nameBad] = level;				// ergï¿½nzt am 13.03.22 Fehlerkorrektur
 }
 
-// Funktionsaufrufe für die Rollade im Schlafzimmer
+// Funktionsaufrufe fï¿½r die Rollade im Schlafzimmer
 
 void shuttersSchlafUp() {
   DEBUG_PRINTLN("Shutters Schlaf going up.");
@@ -541,12 +541,12 @@ void shuttersSchlafSetState(uint8_t state) {
 void onShuttersSchlafLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters Schlaf at ", level);
  DEBUG_PRINTLN(" %");
- byte temp = rolladenOGkalibriert(nameSchlaf, level);
+ int temp = rolladenOGkalibriert(nameSchlaf, level);
  DEBUG_PRINTLN_VALUE("> Rollade Schlafzimmer kalibriert nach Start  ", temp);
- rolladeOGlevel[nameSchlaf] = level;				// ergänzt am 13.03.22 Fehlerkorrektur
+ rolladeOGlevel[nameSchlaf] = level;				// ergï¿½nzt am 13.03.22 Fehlerkorrektur
 }
 
-// Funktionsaufrufe für die Rollade im Arbeitszimmer Süd, große Rollade
+// Funktionsaufrufe fï¿½r die Rollade im Arbeitszimmer Sï¿½d, groï¿½e Rollade
 
 void shuttersArbSuedUp() {
   DEBUG_PRINTLN("Shutters ArbSued going up.");
@@ -586,12 +586,12 @@ void onShuttersArbSuedLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters ArbSued at ", le
  vel);
  DEBUG_PRINTLN(" %");
- byte temp = rolladenOGkalibriert(nameArbSued, level);
- DEBUG_PRINTLN_VALUE("> Rollade Arbeit Süd kalibriert nach Start  ", temp);
- rolladeOGlevel[nameArbSued] = level;				// ergänzt am 13.03.22 Fehlerkorrektur
+ int temp = rolladenOGkalibriert(nameArbSued, level);
+ DEBUG_PRINTLN_VALUE("> Rollade Arbeit Sï¿½d kalibriert nach Start  ", temp);
+ rolladeOGlevel[nameArbSued] = level;				// ergï¿½nzt am 13.03.22 Fehlerkorrektur
 }
 
-// Funktionsaufrufe für die Rollade im Arbeitszimmer West, kleine Rollade
+// Funktionsaufrufe fï¿½r die Rollade im Arbeitszimmer West, kleine Rollade
 
 void shuttersArbWestUp() {
   DEBUG_PRINTLN("Shutters ArbWest going up.");
@@ -629,9 +629,9 @@ void shuttersArbWestSetState(uint8_t state) {
 void onShuttersArbWestLevelReached(uint8_t level) {
  DEBUG_PRINT_VALUE("Shutters ArbWest at ", level);
  DEBUG_PRINTLN(" %");
- byte temp = rolladenOGkalibriert(nameArbWest, level);
+ int temp = rolladenOGkalibriert(nameArbWest, level);
  DEBUG_PRINTLN_VALUE("> Rollade Arbeit West kalibriert nach Start  ", temp);
- rolladeOGlevel[nameArbWest] = level;				// ergänzt am 13.03.22 Fehlerkorrektur
+ rolladeOGlevel[nameArbWest] = level;				// ergï¿½nzt am 13.03.22 Fehlerkorrektur
 }
 
 // --------------------------------------------------------------------------
@@ -639,16 +639,16 @@ void onShuttersArbWestLevelReached(uint8_t level) {
 
 
 /*
-#### Shutters (unsigned long `courseTime`, void (\*`upCallback`)(void), void (\*`downCallback`)(void), void (\*`haltCallback`)(void), byte (\*`getStateCallback`)(void), void (\*`setStateCallback`)(byte state), float `calibrationRatio` = 0.1, void (\*`onLevelReachedCallback`)(byte level))
+#### Shutters (unsigned long `courseTime`, void (\*`upCallback`)(void), void (\*`downCallback`)(void), void (\*`haltCallback`)(void), int (\*`getStateCallback`)(void), void (\*`setStateCallback`)(int state), float `calibrationRatio` = 0.1, void (\*`onLevelReachedCallback`)(int level))
 
 * **`courseTime`**: Time in milliseconds to do a full shutters course
 * **`upCallback()`**: Function to execute for the shutters to go up
 * **`downCallback()`**: Function to execute for the shutters to go down
 * **`haltCallback()`**: Function to execute for the shutters to halt
-* **`getStateCallback()`**: Function to get state. This must return the state byte, or 255 if you don't know the state byte (on first boot)
-* **`setStateCallback(byte state)`**: Function to set the state byte. Store this in the EEPROM of SPIFFS, etc.
+* **`getStateCallback()`**: Function to get state. This must return the state int, or 255 if you don't know the state int (on first boot)
+* **`setStateCallback(int state)`**: Function to set the state int. Store this in the EEPROM of SPIFFS, etc.
 * **`calibrationRatio`**: The calibration ratio. If the full course is 30 sec. and the ratio is 0.1, the calibration time will be 30 * 0.1 = 3 sec. Defaults to 0.1
-* **`onLevelReachedCallback(byte level)`**: Function to be called whenever a new level is reached
+* **`onLevelReachedCallback(int level)`**: Function to be called whenever a new level is reached
 
 Shutters Zentral(courseZentralTime, shuttersZentralUp, shuttersZentralDown, shuttersZentralHalt, shuttersZentralGetState, shuttersZentralSetState, calibrationRatio, onShuttersZentralLevelReached);
 

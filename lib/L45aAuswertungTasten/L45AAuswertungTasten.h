@@ -39,7 +39,7 @@ void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long
 
 */
 
-// boolean startsperre = true; in global.h ausgelagert
+// bool startsperre = true; in global.h ausgelagert
 
 // folgende Konstanten werden in void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long startzeit)
 // mit modus=2 verwendet, um von der Schaltdauer abh�ngige Aktionen durchzuf�hren
@@ -382,7 +382,7 @@ void rolladeEGESunten(int nummer)  {
 
 
 void rolladeEGKommando(int nummerRolladeEG, int befehl, int modus, unsigned long startzeit)  {
-	// static byte flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
+	// static int flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
 	static unsigned long dauerTastendruck[8];
 
 

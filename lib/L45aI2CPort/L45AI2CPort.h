@@ -16,7 +16,7 @@ loop()		void leseI2CPort();			E - Eingabe
 			voids in <L45Shutters.h>	A - Ausgabbe
 
 interne Funktionen der Librarie
-			void bit2byte(byte eingaenge, byte eingaengealt)
+			void bit2int(int eingaenge, int eingaengealt)
 folgende interne Funktionen ben�tigen die Basics aus 	A - Ausgabbe
 			void rolladeOGStopGesamt ()
 			void rolladeOGdistanz(int nummer, int distanz)
@@ -31,7 +31,7 @@ folgende interne Funktionen ben�tigen die Basics aus 	A - Ausgabbe
 #define I2C_IN_ADDR 63    		// test o.k. , getestet mit Schraubklemmen Screw-Shield als aus Mege2560 Pin 20/21
 enum I2CPort63Flags { steigend, fallend, ein24V, aus0V };  // neu am 19.03.22
 
-byte I2CPortEingang[8];       	// das am I2C-Port gelesene Eingangssignal
+int I2CPortEingang[8];       	// das am I2C-Port gelesene Eingangssignal
 const int NUMINBITS = sizeof(I2CPortEingang);
 
 /* folgende Konstanten in <L45AAuswertungTasten.h> definiert
@@ -54,7 +54,7 @@ const char *komandoStringI2C[]  =   { "Bad auf      ","Bad ab      ",
 
 
 void resetFlagsFallend()  {
-  static boolean merker;
+  static bool merker;
   if ( merker == false && startsperre == false )   {
     merker = true;
     DEBUG_PRINTLN(" merker::  true  && startsperre::  false  --> BitClear");
@@ -73,23 +73,39 @@ void resetFlagsFallend()  {
 
 
 //  09.02.2022, neu entsprechend sketch_sep27b
-void initI2C() {
+void initI2C(bool &i2cError) {
   Wire.begin();             // I2C-Pins definieren
   // setzten aller Bits der Eingabekarte auf 1
   // -----------------------------------------
   Wire.beginTransmission(I2C_IN_ADDR);   // Start �bertragung zum PCF8574
   Wire.write(0xFF);                      // Alle Bits sind Eing�nge
   Wire.endTransmission();                // Ende
-  DEBUG_PRINTLN("void initI2C() o.k");
-  //resetFlagsFallend();
-}  // Ende void initI2C()
+int error = Wire.endTransmission();
+// hier folgt die Fehlerbetrachtung
+  if (error == 0)
+  {
+    DEBUG_PRINTLN_EMPTY();
+	DEBUG_PRINT("I2C device found at address 0x");
+    Serial.print(I2C_IN_ADDR, HEX);
+    DEBUG_PRINTLN("  !");
+  }
+  else
+  {
+    Serial.print("Error Number ");
+    Serial.print(error);
+    Serial.print(" at address 0x");
+    Serial.print(I2C_IN_ADDR, HEX);
+    Serial.println("  !");
+    i2cError = true;
+  }
+}  // Ende void initI2C(bool &i2cError )
 
 
 // am 19.03.22 den 2ten Parameter erg�nzt. Intention ist die Anpassung an die Librarie Bounce2.h
 // am 15.04.22 statt der verwendeten &-Maskierung auf den bitRead( var, i ) ge�ndert
 // und Aufruf in loop() aus leseI2CPort Zeile 451
-void bit2byte(byte eingaenge, byte eingaengealt)  {
-  static boolean merker;
+void bit2int(int eingaenge, int eingaengealt)  {
+  static bool merker;
   if ( merker == false && startsperre == false )   {
        merker = true;
        // erg�nzt am 17.04.22
@@ -145,7 +161,7 @@ void bit2byte(byte eingaenge, byte eingaengealt)  {
 
     // I2Centprell(i);
   }  //  Ende for (int i = 0 ; i < NUMINBITS; i++)
-}   //  Ende void bit2byte(byte eingaenge)
+}   //  Ende void bit2int(int eingaenge)
 
 
 void printI2CPort() {
@@ -282,11 +298,11 @@ void rolladeOGStop(int nummer)  {
 /*
 Definition in <L45aShutters.h> Zeile 39
 	enum OGRolladenNamen { nameBad, nameSchlaf, nameArbSued, nameArbWest };
-	byte rolladeOGaktiv;
+	int rolladeOGaktiv;
 */
 
 void rolladeOGKommando(int nummerRolladeOG, int befehl, int modus, unsigned long startzeit)  {
-	// static byte flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
+	// static int flagsrollade[8];	Bit 0 = Rollade Auf aktiv, Bit 1 = Rollade Ab aktiv, Bit 2 = Rollade angehalten aus Befehl
 	static unsigned long dauerTastendruck[5];
 
 	switch (modus) {
@@ -386,7 +402,7 @@ void checkStartsperreOG()  {
      zum Testen
    */
    /*
-   static boolean merker;
+   static bool merker;
    
    if (merker == false)  {
      merker = true;
@@ -455,24 +471,24 @@ void checkStartsperreOG()  {
 void leseI2CPort()   {
   // Einlesen der Bits aus der I2C-INPUT Karte
   // ------------------------------------------
-  static byte wert;                    // am 09.02.22 auf lokale Variable ge�ndert
-  static byte altwert = 255;		// am 09.03.22 den Wert erg�nzt, ist in Verbindung mit der Auswertung der
+  static int wert;                    // am 09.02.22 auf lokale Variable ge�ndert
+  static int altwert = 255;		// am 09.03.22 den Wert erg�nzt, ist in Verbindung mit der Auswertung der
   // steigenden Flanke zu werten und verhindert Rolladenfahrt nach Programmstart, wenn fehlerhaft ein Eingangssignal anliegt
 
-  Wire.requestFrom(I2C_IN_ADDR, 1);    // Ein Byte (= 8 Bits) vom PCF8574 lesen
+  Wire.requestFrom(I2C_IN_ADDR, 1);    // Ein int (= 8 Bits) vom PCF8574 lesen
   while (Wire.available() == 0)        // Warten, bis Daten verf�gbar
     ;
   wert = 255 - Wire.read();            // in invertierte Eingabe wandlen
-  // bit2byte(wert); verschoben in if (wert != altwert)
+  // bit2int(wert); verschoben in if (wert != altwert)
 
   if (wert != altwert) {               // Wert nur ausgeben wenn er sich �ndert
-    // bit2byte(wert, altwert);       	// am 19.03.22 nach hier verschoben und den 2ten Parameter erg�nzt
+    // bit2int(wert, altwert);       	// am 19.03.22 nach hier verschoben und den 2ten Parameter erg�nzt
     DEBUG_PRINTLN_VALUE("Anzahl der NUMINBITS  :", NUMINBITS);
     DEBUG_PRINTLN_VALUE("neuer Wert: ", wert);
     // Wert auf "Seriel Monitor" ausgeben
     DEBUG_PRINTLN_VALUEBIN("   dezimal und bin�r:  ", wert);
   }  // Ende if (wert != altwert)
-  bit2byte(wert, altwert);
+  bit2int(wert, altwert);
   altwert = wert;
 
   // auswertungI2CPort63();  in loop()
